@@ -132,3 +132,32 @@ resource "kubernetes_ingress_v1" "web" {
     }
   }
 }
+
+resource "kubernetes_horizontal_pod_autoscaler_v2" "web" {
+  metadata {
+    name      = "web-hpa"
+    namespace = kubernetes_namespace.this.metadata[0].name
+  }
+
+  spec {
+    min_replicas = var.replicas
+    max_replicas = var.replicas * 3
+
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind        = "Deployment"
+      name        = kubernetes_deployment.web.metadata[0].name
+    }
+
+    metric {
+      type = "Resource"
+      resource {
+        name = "cpu"
+        target {
+          type                = "Utilization"
+          average_utilization = 50
+        }
+      }
+    }
+  }
+}
